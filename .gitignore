@@ -1,0 +1,12 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+build/
+dist/
+.env
+
+# Source manuals are downloaded, never committed
+data/raw/*
+!data/raw/.gitkeep
+data/parsed_sections.json

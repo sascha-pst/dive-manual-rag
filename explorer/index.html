@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dive Manual RAG Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a single descent line down the left edge; each pipeline stage is a station on it, with demo, analogy and tip. */
+:root{
+  --bg:#eef3f5;
+  --surface:#ffffff;
+  --ink:#0b2233;
+  --muted:#566874;
+  --line:#d3dde3;
+  --accent:#1f5fbf;      /* alpha-flag blue */
+  --accent-soft:#e3ecfa;
+  --flag:#c8352a;        /* dive-flag red: warnings and refusals */
+  --flag-soft:#fbe7e5;
+  --good:#1d7a4f;
+  --good-soft:#e2f3ea;
+  --warn:#9a6400;
+  --warn-soft:#fbf0d9;
+  --code-bg:#0d1f2b;
+  --code-ink:#d6e6ef;
+  --font-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#071219;--surface:#0e1e29;--ink:#e2ecf1;--muted:#8ea3b0;--line:#1f3442;
+    --accent:#72a7ff;--accent-soft:#132c4a;--flag:#ff7a6e;--flag-soft:#3a1a18;
+    --good:#5fd39a;--good-soft:#11301f;--warn:#f2be5c;--warn-soft:#3a2c0f;
+    --code-bg:#050d13;--code-ink:#cfe0ea;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#071219;--surface:#0e1e29;--ink:#e2ecf1;--muted:#8ea3b0;--line:#1f3442;
+  --accent:#72a7ff;--accent-soft:#132c4a;--flag:#ff7a6e;--flag-soft:#3a1a18;
+  --good:#5fd39a;--good-soft:#11301f;--warn:#f2be5c;--warn-soft:#3a2c0f;
+  --code-bg:#050d13;--code-ink:#cfe0ea;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--font-body)}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4vw,40px);font-weight:700}
+h2{font-size:24px;font-weight:700}
+h3{font-size:15px;font-weight:600;font-family:var(--font-body)}
+p{margin:0}
+code,pre,.mono{font-family:var(--font-mono)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+header.top{display:grid;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+header.top p{max-width:72ch;color:var(--muted)}
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);color:var(--ink);border-left:4px solid var(--warn);padding:10px 14px;border-radius:6px;max-width:90ch;font-size:14px}
+.stages{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.stages a{display:inline-flex;gap:8px;align-items:center;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;font-size:13px;font-weight:500}
+.stages a:hover,.stages a:focus-visible{border-color:var(--accent);outline:none}
+.stages a b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--surface);font-size:12px}
+.querybar{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.qrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.qrow label{font-weight:600;font-size:13px}
+#q{flex:1 1 320px;min-width:0;font:15px var(--font-body);padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+#q:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:12px var(--font-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 10px;cursor:pointer}
+.chip:hover,.chip:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.descent{position:relative;margin-top:28px;display:grid;gap:40px}
+.descent::before{content:"";position:absolute;left:15px;top:6px;bottom:0;width:2px;background:linear-gradient(var(--accent),var(--line))}
+section.stage{position:relative;padding-left:48px;display:grid;gap:14px;scroll-margin-top:110px}
+.marker{position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);display:grid;place-items:center;font-weight:700;font-family:var(--font-display);color:var(--accent)}
+.stage-head{display:grid;gap:4px}
+.stage-head p{color:var(--muted);max-width:75ch}
+.analogy{background:var(--accent-soft);border-radius:8px;padding:10px 14px;max-width:85ch;font-size:14px}
+.analogy strong{font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+.controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+.ctl{display:grid;gap:3px;font-size:13px}
+.ctl label{font-weight:600}
+.ctl output{font-family:var(--font-mono);color:var(--accent)}
+input[type=range]{accent-color:var(--accent);width:170px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:13px var(--font-body);border:0;background:var(--surface);color:var(--ink);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.toggle{display:inline-flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
+.toggle input{accent-color:var(--accent)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--good-soft);color:var(--good)}
+.pill.perm{background:var(--warn-soft);color:var(--warn)}
+.pill.off{background:var(--flag-soft);color:var(--flag)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.stats{display:flex;flex-wrap:wrap;gap:10px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:120px}
+.stat b{display:block;font-family:var(--font-display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.bad b{color:var(--flag)}
+.chunklist{display:grid;gap:8px;max-height:430px;overflow:auto;padding-right:4px}
+.chunk{border:1px solid var(--line);border-left:5px solid var(--c,var(--accent));border-radius:6px;padding:8px 10px;font-size:13px;display:grid;gap:4px}
+.chunk .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.chunk .meta .id{font-family:var(--font-mono);color:var(--ink);font-weight:500}
+.sec{font-family:var(--font-mono);font-size:11.5px;padding:1px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+.rawbox{font:12.5px/1.5 var(--font-mono);white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;margin:0;overflow-x:auto;max-height:340px}
+.rawbox .noise{background:var(--flag-soft);color:var(--flag);border-radius:2px}
+.rawbox .fixed{background:var(--good-soft);color:var(--good);border-radius:2px}
+.rank{display:grid;gap:6px;align-content:start}
+.rrow{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.rrow:last-child{border-bottom:0}
+.rrow .n{font-family:var(--font-mono);color:var(--muted);text-align:right}
+.rrow .t{display:grid;gap:3px;min-width:0}
+.rrow .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rrow .snip{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.move{font-family:var(--font-mono);font-size:12px;font-weight:500}
+.move.up{color:var(--good)}.move.down{color:var(--flag)}.move.same{color:var(--muted)}
+.answer{border-radius:10px;padding:14px 16px;display:grid;gap:8px;border:1px solid var(--line)}
+.answer.route-explain{border-left:5px solid var(--accent)}
+.answer.route-lookup{border-left:5px solid var(--good)}
+.answer.route-advice,.answer.route-refuse{border-left:5px solid var(--flag)}
+.cite{font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:500}
+.tip{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.tip h3{color:var(--code-ink);font-size:13px;display:flex;gap:8px;align-items:center}
+.tip h3::before{content:"TIP";font:600 11px var(--font-mono);background:var(--accent);color:#fff;padding:1px 6px;border-radius:4px}
+.tip p{font-size:13px;opacity:.9}
+.tip pre{margin:0;font-size:12.5px;line-height:1.5;overflow-x:auto;white-space:pre}
+.small{font-size:12.5px;color:var(--muted)}
+.evbar{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:8px;align-items:center}
+.evbar .bar{height:8px}
+.evbar .bar i.r{background:var(--good)}
+.hitcell{font-family:var(--font-mono);font-size:12.5px}
+.hitcell.miss{color:var(--flag)}
+.hitcell.hit1{color:var(--good);font-weight:600}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--bg)}
+footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:grid;gap:6px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>Dive Manual RAG Explorer</h1>
+  <p>A working walkthrough of a retrieval-augmented generation pipeline for approved, public diving sources. Every stage below runs live in your browser. Change the chunking in stage 3 and watch retrieval, answers and evaluation scores move in stages 4 to 7.</p>
+  <div class="notice" role="note"><span aria-hidden="true">⚑</span><span>The sample corpus is illustrative text written for this demo. It explains general diving physics and physiology in plain language and is <strong>not quoted from the Navy or NOAA manuals</strong>. It is not diving guidance.</span></div>
+  <nav class="stages" aria-label="Pipeline stages">
+    <a href="#sources"><b>1</b>Sources</a>
+    <a href="#parse"><b>2</b>Parse</a>
+    <a href="#chunk"><b>3</b>Chunk</a>
+    <a href="#retrieve"><b>4</b>Retrieve</a>
+    <a href="#rerank"><b>5</b>Rerank</a>
+    <a href="#answer"><b>6</b>Answer &amp; guardrails</a>
+    <a href="#eval"><b>7</b>Evaluate</a>
+  </nav>
+</header>
+
+<div class="querybar">
+  <div class="qrow">
+    <label for="q">Query</label>
+    <input id="q" type="text" value="what causes the bends" autocomplete="off">
+  </div>
+  <div class="chips" id="examples" aria-label="Example queries"></div>
+</div>
+
+<div class="descent">
+
+<!-- 1 SOURCES -->
+<section class="stage" id="sources">
+  <div class="marker">1</div>
+  <div class="stage-head">
+    <h2>Sources: decide what is allowed in</h2>
+    <p>The license check happens before any parsing. Each source gets a manifest entry with its revision and license, and ingestion refuses anything not on the allow list.</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> it's like only filling your tank at a verified fill station. Contaminated gas can't be fixed by a better regulator, and unlicensed or outdated text can't be fixed by a better prompt.</div>
+  <div class="panel">
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Source</th><th>Publisher</th><th>Best format</th><th>License status</th><th>Decision</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.navsea.navy.mil/Home/SUPSALV/00C3-Diving/Diving-Publications/">US Navy Diving Manual, Rev 7 Change A</a></td><td>NAVSEA</td><td>ePub (2023)</td><td>Released to the public; tables noted as uncopyrighted with unlimited distribution</td><td><span class="pill ok">Ingest</span></td></tr>
+        <tr><td><a href="https://www.navsea.navy.mil/Home/SUPSALV/00C3-Diving/Diving-Publications/">Guidance for Diving in Contaminated Waters, Rev 2</a></td><td>NAVSEA</td><td>PDF</td><td>Released to the public</td><td><span class="pill ok">Ingest</span></td></tr>
+        <tr><td><a href="https://omb.report/icr/202610-0648-005/doc/174085100">NOAA Diving Standards &amp; Safety Manual (Mar 2025)</a></td><td>NOAA OMAO</td><td>PDF</td><td>US government work</td><td><span class="pill ok">Ingest</span></td></tr>
+        <tr><td><a href="https://home.nps.gov/subjects/policy/upload/FM-4_10-01-2019.pdf">NPS Diving Safety &amp; Operations Manual (FM-4)</a></td><td>National Park Service</td><td>PDF</td><td>US government work</td><td><span class="pill ok">Ingest</span></td></tr>
+        <tr><td>NOAA Diving Manual, 6th ed.</td><td>Commercial publisher</td><td>Book</td><td>Commercially published, copyrighted</td><td><span class="pill perm">Needs permission</span></td></tr>
+        <tr><td>Training agency and DAN material</td><td>PADI, SSI, DAN</td><td>Mixed</td><td>Copyrighted</td><td><span class="pill perm">Needs permission</span></td></tr>
+        <tr><td>Rubicon Research Repository</td><td>Rubicon Foundation</td><td>None</td><td>Offline since 2021</td><td><span class="pill off">Unavailable</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="tip">
+    <h3>Gate ingestion on a manifest</h3>
+    <p>Keep sources in version control. Revision and effective date travel with every chunk, so answers can say which edition they came from.</p>
+<pre>ALLOWED = {"public-release", "us-gov-work", "licensed-written"}
+
+SOURCES = [
+  {"id": "usn-dm-r7a", "license": "public-release",
+   "revision": "Rev 7 Change A", "effective": "2018-04-30",
+   "path": "raw/DivMan_Rev7ChangeA.epub"},
+  {"id": "noaa-ndssm", "license": "us-gov-work",
+   "revision": "2025", "effective": "2025-03-06",
+   "path": "raw/NDSSM_2025.pdf"},
+]
+
+blocked = [s["id"] for s in SOURCES if s["license"] not in ALLOWED]
+assert not blocked, f"Unlicensed sources: {blocked}"</pre>
+  </div>
+</section>
+
+<!-- 2 PARSE -->
+<section class="stage" id="parse">
+  <div class="marker">2</div>
+  <div class="stage-head">
+    <h2>Parse: turn pages into clean, structured text</h2>
+    <p>PDFs repeat headers and footers on every page, hyphenate words across lines, and flatten tables into number soup. Switch each cleaning step on and off to see what it fixes.</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> parsing is rinsing your gear after a dive. Headers, footers and broken hyphens are the salt crust. Leave them on and they corrode every stage downstream.</div>
+  <div class="panel">
+    <div class="controls">
+      <label class="toggle"><input type="checkbox" id="p-head" checked> Remove repeated headers and footers</label>
+      <label class="toggle"><input type="checkbox" id="p-hyph" checked> Rejoin hyphenated words</label>
+      <label class="toggle"><input type="checkbox" id="p-lines" checked> Join wrapped lines</label>
+      <label class="toggle"><input type="checkbox" id="p-table" checked> Extract table as rows</label>
+    </div>
+    <div class="grid2">
+      <div class="rank"><h3>Raw page text <span class="small">(noise highlighted)</span></h3><pre class="rawbox" id="raw-out"></pre></div>
+      <div class="rank"><h3>Cleaned output</h3><pre class="rawbox" id="clean-out"></pre></div>
+    </div>
+    <div id="table-out"></div>
+  </div>
+  <div class="tip">
+    <h3>Detect boilerplate by frequency, tables by structure</h3>
+    <p>A line that appears on more than half the pages is boilerplate. Pull tables out with a table extractor and store them as rows, not prose.</p>
+<pre>from collections import Counter
+import fitz, pdfplumber   # pymupdf, pdfplumber
+
+pages = [p.get_text() for p in fitz.open(path)]
+freq  = Counter(l.strip() for p in pages for l in set(p.splitlines()))
+boiler = {l for l, c in freq.items() if l and c &gt; 0.5 * len(pages)}
+
+clean = ["\n".join(l for l in p.splitlines() if l.strip() not in boiler)
+         for p in pages]
+clean = [re.sub(r"(\w)-\n(\w)", r"\1\2", p) for p in clean]   # de-hyphenate
+
+with pdfplumber.open(path) as pdf:
+    tables = [t for pg in pdf.pages for t in pg.extract_tables()]</pre>
+  </div>
+</section>
+
+<!-- 3 CHUNK -->
+<section class="stage" id="chunk">
+  <div class="marker">3</div>
+  <div class="stage-head">
+    <h2>Chunk: choose the unit of retrieval</h2>
+    <p>The sample corpus has 14 numbered sections. Fixed-size chunking ignores those boundaries. Section-aware chunking splits on section numbers, prepends a heading to each chunk, and only cuts inside a section when it runs past the size limit.</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> chunks are dive slates. Too small and a procedure won't fit. Too big and you can't find the line you need at depth. Section-aware chunking writes one procedure per slate, with its title at the top.</div>
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl"><label id="strat-label">Strategy</label>
+        <div class="seg" role="group" aria-labelledby="strat-label">
+          <button type="button" id="s-fixed" aria-pressed="false">Fixed size</button>
+          <button type="button" id="s-section" aria-pressed="true">Section-aware</button>
+        </div>
+      </div>
+      <div class="ctl"><label for="c-size">Max chunk size <output id="c-size-o"></output> words</label><input type="range" id="c-size" min="20" max="160" step="5" value="90"></div>
+      <div class="ctl"><label for="c-ov">Overlap <output id="c-ov-o"></output> words</label><input type="range" id="c-ov" min="0" max="40" step="5" value="10"></div>
+    </div>
+    <div class="stats" id="chunk-stats"></div>
+    <div class="chunklist" id="chunk-list" tabindex="0" aria-label="Chunks"></div>
+  </div>
+  <div class="tip">
+    <h3>Split on section numbers and carry a breadcrumb</h3>
+    <p>Manuals number their sections, so use the numbering. Prepending the heading gives a mid-section chunk the context it lost when it was cut.</p>
+<pre>SEC = re.compile(r"^(\d+-\d+(?:\.\d+)*)\s+(.+)$", re.M)
+
+def section_chunks(text, src, max_words=300, overlap=40):
+    marks = list(SEC.finditer(text)) + [None]
+    for m, nxt in zip(marks, marks[1:]):
+        body  = text[m.end(): nxt.start() if nxt else None].split()
+        crumb = f"{src['id']} {src['revision']} §{m[1]} {m[2]}"
+        step  = max_words - overlap
+        for i in range(0, max(len(body), 1), step):
+            yield {"text": crumb + "\n" + " ".join(body[i:i+max_words]),
+                   "section": m[1], **src}</pre>
+  </div>
+</section>
+
+<!-- 4 RETRIEVE -->
+<section class="stage" id="retrieve">
+  <div class="marker">4</div>
+  <div class="stage-head">
+    <h2>Retrieve: lexical, semantic, and hybrid</h2>
+    <p>BM25 matches the exact words in the query. The semantic column uses a stand-in scorer (TF-IDF with a diver-slang synonym map) to imitate what an embedding model does: "bends" finds decompression sickness without sharing a word with it. Hybrid merges both rankings with reciprocal rank fusion (RRF).</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> BM25 is a buddy who only responds to textbook hand signals. The semantic retriever gets what you mean even when your signal is sloppy, but sometimes reads too much into it. Hybrid means diving with both buddies.</div>
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl"><label for="alpha">Semantic weight in RRF <output id="alpha-o"></output></label><input type="range" id="alpha" min="0" max="1" step="0.1" value="0.5"></div>
+      <div class="ctl"><label for="topk">Top-k <output id="topk-o"></output></label><input type="range" id="topk" min="1" max="8" step="1" value="4"></div>
+      <p class="small" id="qtokens"></p>
+    </div>
+    <div class="grid3">
+      <div class="rank"><h3>BM25 (lexical)</h3><div id="r-bm25"></div></div>
+      <div class="rank"><h3>Semantic (stand-in)</h3><div id="r-dense"></div></div>
+      <div class="rank"><h3>Hybrid (RRF)</h3><div id="r-hybrid"></div></div>
+    </div>
+  </div>
+  <div class="tip">
+    <h3>Hybrid retrieval in a dozen lines</h3>
+    <p>RRF only uses ranks, so you never have to put BM25 and cosine scores on the same scale. k=60 is the usual default.</p>
+<pre>from rank_bm25 import BM25Okapi
+from collections import defaultdict
+
+bm25 = BM25Okapi([tokenize(c["text"]) for c in chunks])
+
+def hybrid(query, k=60, w_sem=0.5, n=20):
+    lex = bm25.get_scores(tokenize(query)).argsort()[::-1][:n]
+    sem = vector_db.search(embed(query), limit=n)        # ids
+    fused = defaultdict(float)
+    for r, i in enumerate(lex): fused[i] += (1 - w_sem) / (k + r + 1)
+    for r, i in enumerate(sem): fused[i] += w_sem       / (k + r + 1)
+    return sorted(fused, key=fused.get, reverse=True)</pre>
+  </div>
+</section>
+
+<!-- 5 RERANK -->
+<section class="stage" id="rerank">
+  <div class="marker">5</div>
+  <div class="stage-head">
+    <h2>Rerank: a closer look at the shortlist</h2>
+    <p>A reranker reads the query and each candidate together and rescores them. A real system uses a cross-encoder. This demo uses a transparent stand-in that scores query coverage, heading match and focus (how much of the chunk belongs to one section), so mixed chunks from fixed-size chunking sink.</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> retrieval is the wide sweep of a search pattern. Reranking is going back to each thing you found and checking it up close before you bring it to the surface.</div>
+  <div class="panel">
+    <label class="toggle"><input type="checkbox" id="use-rerank" checked> Use reranked order in stages 6 and 7</label>
+    <div class="grid2">
+      <div class="rank"><h3>Hybrid order (top 8)</h3><div id="rr-before"></div></div>
+      <div class="rank"><h3>After rerank</h3><div id="rr-after"></div></div>
+    </div>
+  </div>
+  <div class="tip">
+    <h3>Swap in a cross-encoder</h3>
+    <p>Rerank 20 to 50 candidates and keep the top 4 to 6. Cross-encoders are slower than embeddings, which is why they only see the shortlist.</p>
+<pre>from sentence_transformers import CrossEncoder
+rerank = CrossEncoder("BAAI/bge-reranker-base")
+
+cands  = hybrid(query, n=30)
+scores = rerank.predict([(query, chunks[i]["text"]) for i in cands])
+top    = [cands[i] for i in scores.argsort()[::-1][:5]]</pre>
+  </div>
+</section>
+
+<!-- 6 ANSWER -->
+<section class="stage" id="answer">
+  <div class="marker">6</div>
+  <div class="stage-head">
+    <h2>Answer: route first, then ground and cite</h2>
+    <p>A router decides what kind of question this is before any generation. Table lookups are computed, never generated. Personal dive-planning or medical questions get citations and a referral, not advice. Low-confidence retrieval returns a refusal. Everything else gets an answer built only from retrieved chunks, with section citations.</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> a good assistant works like a dive computer. It shows numbers it calculated, never numbers it guessed, and it tells you plainly when you are outside its limits.</div>
+  <div class="panel">
+    <div id="answer-out"></div>
+    <p class="small">In production an LLM writes the final wording from the chunks below. Here the answer is extractive (the best-matching sentences), so you can see exactly what grounding the model would receive.</p>
+    <div class="rank"><h3>Context sent to the model</h3><div id="ctx-out"></div></div>
+  </div>
+  <div class="tip">
+    <h3>Route, then constrain the prompt</h3>
+    <p>Cheap rules or a small classifier can do the routing. The prompt forces citations and gives the model a way to say no.</p>
+<pre>ADVICE = re.compile(r"\b(can i|should i|is it safe|my dive|fly after)\b", re.I)
+
+def answer(q):
+    if ADVICE.search(q):        return refer_with_citations(q)
+    if (m := DEPTH.search(q)):  return table_lookup(m)      # exact, no LLM
+    ctx = rerank(q, hybrid(q))
+    if max_score(ctx) &lt; THRESH: return "Not covered by the approved sources."
+    return llm(SYSTEM + fmt(ctx) + q)
+
+SYSTEM = """Answer only from the context. Cite every claim as [§section, revision].
+If the context does not answer the question, say so. Never compute
+decompression schedules or give personal dive or medical advice."""</pre>
+  </div>
+</section>
+
+<!-- 7 EVAL -->
+<section class="stage" id="eval">
+  <div class="marker">7</div>
+  <div class="stage-head">
+    <h2>Evaluate: score every setting the same way</h2>
+    <p>Sixteen test questions, three of them worded the way divers talk rather than the way manuals do, each labeled with the section that answers it. The scores update as you change chunking, the semantic weight, top-k or the reranker. Click a question to load it into the query bar.</p>
+  </div>
+  <div class="analogy"><strong>Analogy:</strong> this is the checkout dive. Nobody gets certified on vibes. You run the same skills every time and score them the same way, so you know whether a change helped.</div>
+  <div class="panel">
+    <div class="tablewrap">
+      <table id="ev-summary"></table>
+    </div>
+    <p class="small"><strong>Recall@k</strong>: share of questions where a chunk from the right section appears in the top k. <strong>MRR</strong>: rewards finding it at rank 1. <strong>Top-1 purity</strong>: share of the first chunk's words that come from the right section, which drops when chunks mix sections. <strong>Context words</strong>: what you pay for in tokens.</p>
+    <p class="small"><strong>Caveat:</strong> the semantic stand-in's synonym map was written by the same person as these questions, so its perfect score is optimistic. That is a leak from the test set into the system, the same mistake as tuning a prompt on your eval set. A real embedding model will score lower, and you should hold out questions written by someone else.</p>
+    <div class="tablewrap"><table id="ev-detail"></table></div>
+  </div>
+  <div class="tip">
+    <h3>Start with retrieval metrics, then add answer metrics</h3>
+    <p>Retrieval metrics need only labeled sections and run in milliseconds. Add LLM-judged faithfulness and answer correctness (for example with RAGAS) once retrieval is solid.</p>
+<pre>def recall_mrr(evalset, retrieve, k=4):
+    hits, rr = 0, 0.0
+    for ex in evalset:
+        ranked = retrieve(ex["q"])[:k]
+        rank = next((i for i, c in enumerate(ranked)
+                     if c["section"] in ex["gold"]), None)
+        hits += rank is not None
+        rr   += 0 if rank is None else 1 / (rank + 1)
+    return hits / len(evalset), rr / len(evalset)
+
+# Log every run: chunker, size, overlap, w_sem, k, reranker -&gt; scores</pre>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <p>Built as a learning tool. The sample corpus paraphrases general diving concepts and is not a substitute for the source manuals, training, or a diving medical officer.</p>
+  <p>Sources: <a href="https://www.navsea.navy.mil/Home/SUPSALV/00C3-Diving/Diving-Publications/">NAVSEA Diving Publications</a> · <a href="https://adas.org.au/?p=4056">ADAS on USN tables distribution</a> · <a href="https://omb.report/icr/202610-0648-005/doc/174085100">NOAA NDSSM 2025</a> · <a href="https://home.nps.gov/subjects/policy/upload/FM-4_10-01-2019.pdf">NPS FM-4</a> · <a href="https://en.wikipedia.org/wiki/Rubicon_Foundation">Rubicon Foundation</a></p>
+</footer>
+</div>
+
+<script>
+/* ---------- Sample corpus (illustrative, written for this demo) ---------- */
+const CORPUS = [
+ {sec:"2-1", title:"Absolute pressure", text:"Divers work under two pressures at once: atmospheric and hydrostatic. At sea level the atmosphere exerts 1 atmosphere absolute (ata). Every 33 feet of seawater (fsw), about 10 meters, adds another atmosphere. Absolute pressure is the sum of both, so a diver at 33 fsw is under 2 ata and at 99 fsw under 4 ata. Depth gauges show gauge pressure, which leaves out the atmosphere, so add 1 ata to convert."},
+ {sec:"2-2", title:"Boyle's law and gas volume", text:"At constant temperature the volume of a gas is inversely proportional to its absolute pressure. Air in the lungs, mask, ears and buoyancy compensator shrinks on descent and expands on ascent. The largest relative change happens near the surface. Rising from 33 fsw to the surface doubles a gas volume, while rising from 99 fsw to 66 fsw increases it by only one third."},
+ {sec:"2-3", title:"Dalton's law and partial pressure", text:"The total pressure of a gas mixture equals the sum of the partial pressures of its parts. Each gas's partial pressure is its fraction in the mix multiplied by the absolute pressure. Air is about 21 percent oxygen, so at 4 ata the partial pressure of oxygen (PO2) is about 0.84 ata. Narcosis and oxygen toxicity depend on partial pressure, not on percentage."},
+ {sec:"3-1", title:"Nitrogen narcosis", text:"Breathing nitrogen at raised partial pressure produces narcosis, a state that resembles alcohol intoxication. Divers may notice slowed thinking, overconfidence and poor judgment. The effect grows with depth, varies between people and from day to day, and clears quickly on ascent. Narcosis is one reason air diving has a depth limit."},
+ {sec:"3-2", title:"Oxygen toxicity", text:"Oxygen at high partial pressure is toxic. Central nervous system oxygen toxicity can cause visual changes, ringing in the ears, nausea, twitching, irritability and dizziness, and it can lead to a convulsion with no warning. Underwater a convulsion can cause drowning. Risk rises with PO2, exposure time, exertion and carbon dioxide buildup. Planned exposures must stay within the oxygen limits set by the governing procedures."},
+ {sec:"3-3", title:"Arterial gas embolism", text:"Arterial gas embolism happens when expanding gas ruptures lung tissue and bubbles enter the arterial circulation, usually from holding the breath or an airway blockage during ascent. Symptoms typically appear within minutes of surfacing and can include unconsciousness, confusion, weakness or paralysis. It is a medical emergency treated by prompt recompression."},
+ {sec:"3-4", title:"Decompression sickness", text:"Decompression sickness, often called the bends, is caused by bubbles of inert gas that form in tissues and blood when pressure falls too quickly for the dissolved gas to leave in solution. Symptoms range from joint pain and skin rash to numbness, weakness, breathing difficulty and paralysis. Signs may appear minutes to hours after a dive. Treatment is recompression in a chamber following an approved treatment table."},
+ {sec:"3-5", title:"Barotrauma of the ears and sinuses", text:"Barotrauma is injury caused by a pressure difference between an air space in the body and the surrounding water. The middle ear and sinuses are most often affected. An ear squeeze on descent causes pain that grows if the diver keeps descending without equalizing. Equalize early and often, stop or rise slightly if equalizing fails, and do not dive with congestion from a cold."},
+ {sec:"4-1", title:"Controlled ascent", text:"Ascend at a controlled rate while breathing normally. Never hold the breath during ascent, because expanding gas can overinflate and rupture the lungs. Vent air from the buoyancy compensator and dry suit as it expands to avoid an uncontrolled rise. Complete any required decompression stops at the depths and times the governing table specifies."},
+ {sec:"4-2", title:"Flying and altitude after diving", text:"Lower cabin pressure in an aircraft, or a drive over a mountain pass, reduces ambient pressure further and can bring on decompression sickness after diving. Divers must wait the surface interval the governing procedures specify before flying or going to altitude. The required interval depends on the dives performed and the altitude reached."},
+ {sec:"5-1", title:"Open-circuit regulators", text:"An open-circuit scuba regulator reduces high-pressure cylinder gas in two stages. The first stage, mounted on the cylinder valve, drops the gas to an intermediate pressure above ambient. The second stage, held in the mouth, delivers gas at ambient pressure on demand as the diver inhales. Exhaled gas goes into the water."},
+ {sec:"5-2", title:"Pre-dive checks", text:"Before entering the water, divers confirm that cylinders are full and valves open, regulators breathe freely, gauges read correctly, buoyancy devices inflate and deflate, and weights can be released. Buddies review each other's equipment. The dive briefing covers the plan, depth and time limits, signals and emergency procedures."},
+ {sec:"6-1", title:"Contaminated water", text:"Water polluted by sewage, chemicals or biological agents can harm divers through skin contact, swallowing or breathing. Diving in contaminated water calls for a hazard assessment and protective equipment chosen for the contaminant, often a surface-supplied helmet sealed to a dry suit so no water reaches the diver, followed by decontamination after the dive."},
+ {sec:"7-1", title:"Recompression treatment", text:"Recompression chambers treat decompression sickness and arterial gas embolism by raising pressure to shrink bubbles and by giving oxygen to speed inert gas removal. Treatment tables define depths, times and breathing gases. Table selection and any change during treatment are directed by a qualified diving medical officer based on the diver's symptoms and response."}
+];
+const PALETTE = ["#1f5fbf","#2a8c7a","#8a5cc7","#c8352a","#b07a10","#2f7fb0","#6c8a1e","#b8457f","#3c6e71","#a85a2a","#4d5fd0","#1d7a4f","#7a4fb0","#c06a00"];
+const SEC_COLOR = Object.fromEntries(CORPUS.map((c,i)=>[c.sec,PALETTE[i%PALETTE.length]]));
+
+const EVALSET = [
+ {q:"what causes the bends", gold:["3-4"]},
+ {q:"why do my ears hurt when descending", gold:["3-5"]},
+ {q:"how does gas volume change as I go up", gold:["2-2"]},
+ {q:"how is absolute pressure calculated in seawater", gold:["2-1"]},
+ {q:"how do you work out the partial pressure of oxygen", gold:["2-3"]},
+ {q:"feeling drunk at depth", gold:["3-1"]},
+ {q:"seizure risk from breathing high oxygen", gold:["3-2"]},
+ {q:"danger of holding breath while surfacing", gold:["3-3","4-1"]},
+ {q:"how long to wait before getting on a plane", gold:["4-2"]},
+ {q:"diving in sewage polluted harbor", gold:["6-1"]},
+ {q:"who picks the chamber treatment table", gold:["7-1"]},
+ {q:"what to check before getting in the water", gold:["5-2"]},
+ {q:"how does a regulator first stage work", gold:["5-1"]},
+ {q:"why do I feel tipsy deep down", gold:["3-1"]},
+ {q:"getting on an airplane after scuba", gold:["4-2"]},
+ {q:"what is a squeeze", gold:["3-5"]}
+];
+const EXAMPLES = ["what causes the bends","feeling drunk at depth","absolute pressure at 66 fsw","PO2 of 32% oxygen at 99 fsw","can I fly 6 hours after my dive","best dive sites in Bonaire"];
+
+/* ---------- Text processing ---------- */
+const STOP = new Set("a an the of and or to in on at by for is are be as it its this that with from into than so if when do does did i my me you your what why how who which can could should would during before after there their them they not no any each about get getting go going while work out".split(" "));
+function stem(w){
+  if(w.length>5 && w.endsWith("ing")) return w.slice(0,-3);
+  if(w.length>4 && w.endsWith("ed")) return w.slice(0,-2);
+  if(w.length>3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0,-1);
+  return w;
+}
+function tok(s){ return (s.toLowerCase().match(/[a-z0-9]+/g)||[]).filter(w=>!STOP.has(w)).map(stem); }
+const SYN = {
+  bends:"decompression sickness bubble", dcs:"decompression sickness", narked:"narcosis nitrogen",
+  drunk:"narcosis intoxication", embolism:"arterial gas embolism", squeeze:"barotrauma equalize",
+  ear:"barotrauma equalize middle", ears:"barotrauma equalize middle", hurt:"pain", fly:"flying altitude aircraft",
+  flying:"altitude aircraft", plane:"flying aircraft altitude", seizure:"convulsion oxygen toxicity",
+  convulsion:"oxygen toxicity", o2:"oxygen", po2:"partial pressure oxygen", deep:"depth pressure",
+  chamber:"recompression treatment", sewage:"contaminated polluted", polluted:"contaminated",
+  dirty:"contaminated polluted", gear:"equipment", check:"checks before", regulator:"stage cylinder",
+  up:"ascent ascend", surfacing:"ascent", descending:"descent equalize", volume:"boyle expand",
+  picks:"selection directed", tipsy:"narcosis intoxication", airplane:"flying aircraft altitude", wait:"interval", water:"entering", breath:"holding lungs"
+};
+function expand(q){
+  const raw = q.toLowerCase().match(/[a-z0-9]+/g)||[];
+  const extra = raw.flatMap(w=>SYN[w]?[SYN[w]]:[]).join(" ");
+  return {base: tok(q), expanded: tok(q+" "+extra), added: tok(extra)};
+}
+
+/* ---------- Chunking ---------- */
+function headOf(c){ return `§${c.sec} ${c.title}.`; }
+function chunkFixed(size, ov){
+  const words = [];
+  CORPUS.forEach(c=>{ (headOf(c)+" "+c.text).split(/\s+/).forEach(w=>words.push({w, sec:c.sec})); });
+  const step = Math.max(1, size-ov), out=[];
+  for(let i=0;i<words.length;i+=step){
+    out.push(makeChunk(words.slice(i,i+size), null));
+    if(i+size>=words.length) break;
+  }
+  return out;
+}
+function chunkSection(size, ov){
+  const out=[];
+  CORPUS.forEach(c=>{
+    const body = c.text.split(/\s+/).map(w=>({w,sec:c.sec}));
+    const head = headOf(c), headN = head.split(/\s+/).length;
+    const room = Math.max(5, size-headN), step = Math.max(1, room-ov);
+    for(let i=0;i<body.length;i+=step){
+      out.push(makeChunk(body.slice(i,i+room), c));
+      if(i+room>=body.length) break;
+    }
+  });
+  return out;
+}
+function makeChunk(sl, c){
+  const secs = {};
+  sl.forEach(x=>secs[x.sec]=(secs[x.sec]||0)+1);
+  let text = sl.map(x=>x.w).join(" ");
+  let n = sl.length, head = "";
+  if(c){ head = headOf(c); text = head+" "+text; secs[c.sec]+=head.split(/\s+/).length; n += head.split(/\s+/).length; }
+  const primary = Object.entries(secs).sort((a,b)=>b[1]-a[1])[0][0];
+  return {text, secs, primary, n, head};
+}
+
+/* ---------- Index & scoring ---------- */
+function buildIndex(chunks){
+  const docs = chunks.map(c=>tok(c.text));
+  const N = docs.length, df = {};
+  docs.forEach(d=>new Set(d).forEach(t=>df[t]=(df[t]||0)+1));
+  const avgdl = docs.reduce((s,d)=>s+d.length,0)/Math.max(1,N);
+  const tfs = docs.map(d=>{const m={}; d.forEach(t=>m[t]=(m[t]||0)+1); return m;});
+  const idfT = t => Math.log((N+1)/((df[t]||0)+1))+1;
+  const vecs = tfs.map(m=>{const v={}; let nn=0; for(const t in m){v[t]=(1+Math.log(m[t]))*idfT(t); nn+=v[t]*v[t];} nn=Math.sqrt(nn)||1; for(const t in v) v[t]/=nn; return v;});
+  return {docs,N,df,avgdl,tfs,idfT,vecs};
+}
+function bm25(ix, qt, k1=1.2, b=0.75){
+  return ix.tfs.map((tf,i)=>{
+    let s=0; const dl=ix.docs[i].length;
+    new Set(qt).forEach(t=>{ if(!tf[t]) return; const idf=Math.log(1+(ix.N-ix.df[t]+0.5)/(ix.df[t]+0.5)); s+=idf*(tf[t]*(k1+1))/(tf[t]+k1*(1-b+b*dl/ix.avgdl)); });
+    return s;
+  });
+}
+function dense(ix, qt){
+  const q={}; qt.forEach(t=>q[t]=(q[t]||0)+1);
+  let nn=0; for(const t in q){ q[t]=(1+Math.log(q[t]))*ix.idfT(t); nn+=q[t]*q[t]; } nn=Math.sqrt(nn)||1;
+  return ix.vecs.map(v=>{ let s=0; for(const t in q) if(v[t]) s+=v[t]*q[t]/nn; return s; });
+}
+function order(scores){ return scores.map((s,i)=>[i,s]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(x=>x[0]); }
+function rrf(lists, weights, k=60){
+  const f={};
+  lists.forEach((l,j)=>l.forEach((id,r)=>{ f[id]=(f[id]||0)+weights[j]/(k+r+1); }));
+  return Object.keys(f).map(Number).sort((a,b)=>f[b]-f[a]).map(id=>({id,score:f[id]}));
+}
+function rerankScore(chunk, q){
+  const qs = new Set(q.expanded);
+  const ct = new Set(tok(chunk.text));
+  let hit=0; qs.forEach(t=>{ if(ct.has(t)) hit++; });
+  const coverage = qs.size? hit/qs.size : 0;
+  const headTok = new Set(tok(headOfSec(chunk.primary)));
+  let hm=0; qs.forEach(t=>{ if(headTok.has(t)) hm=1; });
+  const focus = chunk.secs[chunk.primary]/chunk.n;
+  return 0.6*coverage + 0.25*hm + 0.15*focus;
+}
+function idfCoverage(chunk, q){
+  const ct = new Set(tok(chunk.text)); let tot=0, hit=0;
+  new Set(q.expanded).forEach(t=>{ const w=ix.idfT(t); tot+=w; if(ct.has(t)) hit+=w; });
+  return tot? hit/tot : 0;
+}
+function headOfSec(sec){ const c=CORPUS.find(x=>x.sec===sec); return c? c.title : ""; }
+
+function retrieveAll(state, ix, chunks, query){
+  const q = expand(query);
+  const b = order(bm25(ix, q.base));
+  const ds = dense(ix, q.expanded);
+  const d = order(ds);
+  const h = rrf([b,d],[1-state.alpha, state.alpha]).filter(x=>x.score>0);
+  const hIds = h.map(x=>x.id);
+  const cand = hIds.slice(0,8);
+  const rr = cand.map(id=>({id, s:rerankScore(chunks[id], q)})).sort((a,b)=>b.s-a.s).map(x=>x.id);
+  const final = state.rerank ? rr.concat(hIds.slice(8)) : hIds;
+  return {q, b, d, ds, h, hIds, cand, rr, final};
+}
+
+/* ---------- State ---------- */
+const state = {strategy:"section", size:90, ov:10, alpha:0.5, k:4, rerank:true, query:"what causes the bends"};
+let chunks=[], ix=null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const secChip = s => `<span class="sec" style="border-color:${SEC_COLOR[s]};color:${SEC_COLOR[s]}">§${s}</span>`;
+
+/* ---------- Stage 2: parse demo ---------- */
+const RAW_PARTS = [
+ {t:"DIVING MANUAL · VOLUME 1 (SAMPLE PAGE)          2-4\n", noise:"head"},
+ {t:"Every 33 feet of seawater adds another atmos", noise:null},
+ {t:"-\n", noise:"hyph"},
+ {t:"phere. Absolute pressure is the sum of atmospheric\nand hydrostatic pressure, so add 1 ata to a gauge\nreading to convert it.\n", noise:"lines"},
+ {t:"Table 2-1. Depth and absolute pressure\nDepth (fsw) Absolute pressure (ata) 0 1 33 2 66 3 99 4 132 5\n", noise:"table"},
+ {t:"Sample page for demonstration          Change A\n", noise:"head"}
+];
+const TABLE_ROWS = [[0,1],[33,2],[66,3],[99,4],[132,5]];
+function renderParse(){
+  const H=$("p-head").checked, Y=$("p-hyph").checked, L=$("p-lines").checked, T=$("p-table").checked;
+  $("raw-out").innerHTML = RAW_PARTS.map(p=>{
+    if(p.noise==="head"||p.noise==="hyph") return `<span class="noise">${esc(p.t)}</span>`;
+    if(p.noise==="table") return `<span class="noise">${esc(p.t)}</span>`;
+    return esc(p.t);
+  }).join("");
+  let out = [];
+  RAW_PARTS.forEach(p=>{
+    if(p.noise==="head"){ if(!H) out.push(esc(p.t)); return; }
+    if(p.noise==="hyph"){ out.push(Y? `<span class="fixed">⟵joined</span>` : esc(p.t)); return; }
+    if(p.noise==="lines"){ out.push(L? esc(p.t.replace(/\n(?!$)/g," ")) : esc(p.t)); return; }
+    if(p.noise==="table"){ out.push(T? `<span class="fixed">[Table 2-1 extracted as 5 rows → see below]</span>\n` : esc(p.t)); return; }
+    out.push(esc(p.t));
+  });
+  $("clean-out").innerHTML = out.join("");
+  $("table-out").innerHTML = T ? `<div class="tablewrap"><table style="max-width:420px"><caption class="small" style="text-align:left;padding-bottom:6px">Table 2-1 stored as structured rows (used for exact lookups in stage 6)</caption><thead><tr><th class="num">Depth (fsw)</th><th class="num">Absolute pressure (ata)</th></tr></thead><tbody>${TABLE_ROWS.map(r=>`<tr><td class="num">${r[0]}</td><td class="num">${r[1]}</td></tr>`).join("")}</tbody></table></div>`
+    : `<p class="small" style="color:var(--flag)">Table left as text: "0 1 33 2 66 3" gets embedded as prose, and a model reading it can pair the wrong numbers.</p>`;
+}
+
+/* ---------- Stage 3 ---------- */
+function rebuild(){
+  chunks = state.strategy==="fixed" ? chunkFixed(state.size, state.ov) : chunkSection(state.size, state.ov);
+  ix = buildIndex(chunks);
+}
+function renderChunks(){
+  const mixed = chunks.filter(c=>Object.keys(c.secs).length>1).length;
+  const avg = Math.round(chunks.reduce((s,c)=>s+c.n,0)/chunks.length);
+  const secSpread = {}; chunks.forEach(c=>Object.keys(c.secs).forEach(s=>secSpread[s]=(secSpread[s]||0)+1));
+  const split = Object.values(secSpread).filter(v=>v>1).length;
+  $("chunk-stats").innerHTML = `
+    <div class="stat"><b>${chunks.length}</b><span>chunks</span></div>
+    <div class="stat"><b>${avg}</b><span>avg words per chunk</span></div>
+    <div class="stat ${mixed?'bad':''}"><b>${mixed}</b><span>chunks mixing sections</span></div>
+    <div class="stat"><b>${split}</b><span>sections split across chunks</span></div>`;
+  $("chunk-list").innerHTML = chunks.map((c,i)=>{
+    const secs = Object.entries(c.secs).map(([s,n])=>`${secChip(s)}<span>×${n}</span>`).join(" ");
+    const mix = Object.keys(c.secs).length>1 ? `<span class="pill off">mixes ${Object.keys(c.secs).length} sections</span>` : "";
+    let body = esc(c.text);
+    if(c.head) body = `<strong>${esc(c.head)}</strong>`+esc(c.text.slice(c.head.length));
+    return `<div class="chunk" style="--c:${SEC_COLOR[c.primary]}"><div class="meta"><span class="id">C${i}</span><span>${c.n} words</span>${secs}${mix}</div><div>${body}</div></div>`;
+  }).join("");
+}
+
+/* ---------- Stage 4/5 ---------- */
+function rankRows(ids, scoreOf, max){
+  if(!ids.length) return `<p class="small">No chunk matched.</p>`;
+  const top = ids.slice(0,state.k);
+  const mx = Math.max(...top.map(scoreOf), 1e-9);
+  return top.map((id,r)=>{
+    const c=chunks[id], s=scoreOf(id);
+    return `<div class="rrow"><span class="n">${r+1}</span><div class="t"><div class="top"><span class="mono" style="font-size:12px">C${id}</span>${secChip(c.primary)}<span class="small mono">${s.toFixed(s<1?3:2)}</span></div><div class="bar"><i style="width:${(100*s/mx).toFixed(0)}%"></i></div><div class="snip">${esc(c.text.slice(0,140))}</div></div></div>`;
+  }).join("");
+}
+let R=null;
+function renderRetrieve(){
+  R = retrieveAll(state, ix, chunks, state.query);
+  const bs = bm25(ix, R.q.base);
+  const hmap = Object.fromEntries(R.h.map(x=>[x.id,x.score]));
+  $("qtokens").innerHTML = `Query tokens: <span class="mono">${esc(R.q.base.join(" ")||"(none)")}</span>${R.q.added.length?` · synonym expansion adds <span class="mono">${esc(R.q.added.join(" "))}</span>`:""}`;
+  $("r-bm25").innerHTML = rankRows(R.b, id=>bs[id]);
+  $("r-dense").innerHTML = rankRows(R.d, id=>R.ds[id]);
+  $("r-hybrid").innerHTML = rankRows(R.hIds, id=>hmap[id]);
+  // rerank
+  const before = R.cand, after = R.rr;
+  const row = (id,r,mv)=>{ const c=chunks[id]; return `<div class="rrow"><span class="n">${r+1}</span><div class="t"><div class="top"><span class="mono" style="font-size:12px">C${id}</span>${secChip(c.primary)}${Object.keys(c.secs).length>1?'<span class="pill off">mixed</span>':''}${mv||""}<span class="small mono">${mv!==undefined?rerankScore(c,R.q).toFixed(2):""}</span></div><div class="snip">${esc(c.text.slice(0,120))}</div></div></div>`; };
+  $("rr-before").innerHTML = before.length? before.map((id,r)=>row(id,r)).join("") : `<p class="small">No candidates.</p>`;
+  $("rr-after").innerHTML = after.length? after.map((id,r)=>{
+    const d = before.indexOf(id)-r;
+    const mv = d>0?`<span class="move up">▲${d}</span>`: d<0?`<span class="move down">▼${-d}</span>`:`<span class="move same">=</span>`;
+    return row(id,r,mv);
+  }).join("") : `<p class="small">No candidates.</p>`;
+}
+
+/* ---------- Stage 6 ---------- */
+const ADVICE = /\b(can i|should i|is it safe|am i ok|my dive|my dives|for me|plan (my|a) dive|how long should i)\b/i;
+const DEPTH = /(\d+(?:\.\d+)?)\s*(fsw|feet|ft|msw|meters?|m)\b/i;
+function routeAndAnswer(){
+  const q = state.query.trim();
+  const ctxIds = R.final.slice(0,state.k);
+  const ctxHtml = ctxIds.length ? ctxIds.map((id,r)=>{const c=chunks[id]; return `<div class="rrow"><span class="n">${r+1}</span><div class="t"><div class="top"><span class="mono" style="font-size:12px">C${id}</span>${Object.keys(c.secs).map(secChip).join(" ")}</div><div class="snip" style="white-space:normal">${esc(c.text)}</div></div></div>`;}).join("") : `<p class="small">Nothing retrieved.</p>`;
+  $("ctx-out").innerHTML = ctxHtml;
+
+  let cls, label, body;
+  const m = q.match(DEPTH);
+  const wantsPressure = /\b(pressure|ata|atm|po2|partial)\b/i.test(q);
+  if(ADVICE.test(q)){
+    cls="route-advice"; label=`<span class="pill off">Route: personal advice → refer</span>`;
+    const topCov = ctxIds.length? idfCoverage(chunks[ctxIds[0]], R.q) : 0;
+    const secs = [...new Set(ctxIds.filter(id=>idfCoverage(chunks[id], R.q) >= 0.5*topCov).map(id=>chunks[id].primary))];
+    body = `<p>This assistant doesn't give personal dive-planning or medical advice. These sections cover the topic: ${secs.map(s=>`<span class="cite">[§${s} ${esc(headOfSec(s))}]</span>`).join(", ")||"none found"}. For your own situation, use your governing procedures and talk to your dive supervisor or a diving medicine physician.</p>`;
+  } else if(m && wantsPressure){
+    cls="route-lookup"; label=`<span class="pill ok">Route: table lookup → computed</span>`;
+    const d = parseFloat(m[1]); const unit=m[2].toLowerCase();
+    const metric = /^(msw|m|meter|meters)$/.test(unit);
+    const ata = metric ? d/10+1 : d/33+1;
+    let txt = `At ${d} ${metric?"msw":"fsw"}, absolute pressure = ${d} ÷ ${metric?10:33} + 1 = <strong>${ata.toFixed(2)} ata</strong>. <span class="cite">[§2-1, Table 2-1]</span>`;
+    const pct = q.match(/(\d+(?:\.\d+)?)\s*(%|percent)/i);
+    if(/\b(po2|partial)\b/i.test(q)){
+      const f = pct? parseFloat(pct[1])/100 : 0.21;
+      txt += `<br>PO2 = ${f.toFixed(2)} × ${ata.toFixed(2)} = <strong>${(f*ata).toFixed(2)} ata</strong>${pct?"":" (assuming air, 21% oxygen)"}. <span class="cite">[§2-3]</span>`;
+    }
+    body = `<p>${txt}</p><p class="small">Computed from the stored rule, not generated. The LLM may explain this number but is not allowed to change it.</p>`;
+  } else {
+    const top = ctxIds[0];
+    const qs = new Set(R.q.expanded);
+    const cov = top!==undefined ? idfCoverage(chunks[top], R.q) : 0;
+    if(top===undefined || cov < 0.35){
+      cls="route-refuse"; label=`<span class="pill off">Route: low confidence → decline</span>`;
+      body = `<p>The approved sources don't cover this. <span class="small">(The best chunk covers ${(cov*100).toFixed(0)}% of the query's weighted terms. Rare words count more. The threshold is 35%.)</span></p>`;
+    } else {
+      cls="route-explain"; label=`<span class="pill info">Route: explain → grounded answer</span>`;
+      const sents = [];
+      ctxIds.forEach(id=>{
+        const c=chunks[id];
+        const body = c.head ? c.text.slice(c.head.length) : c.text.replace(/§\d+-\d+ [^.]+\./g,"");
+        (body.match(/[^.]+\.(\s|$)/g)||[]).forEach(s=>{
+          const st=new Set(tok(s)); let h=0; qs.forEach(t=>{if(st.has(t))h++;});
+          if(h) sents.push({s:s.trim(), h, sec:c.primary});
+        });
+      });
+      sents.sort((a,b)=>b.h-a.h);
+      const seen=new Set(), pick=[];
+      for(const x of sents){ if(!seen.has(x.s)){ seen.add(x.s); pick.push(x);} if(pick.length===2) break; }
+      body = pick.length ? `<p>${pick.map(x=>`${esc(x.s)} <span class="cite">[§${x.sec}]</span>`).join(" ")}</p>` : `<p>The approved sources don't cover this.</p>`;
+    }
+  }
+  $("answer-out").innerHTML = `<div class="answer ${cls}"><div>${label}</div>${body}</div>`;
+}
+
+/* ---------- Stage 7 ---------- */
+function evaluate(){
+  const methods = {
+    "BM25": q=>order(bm25(ix, expand(q).base)),
+    "Semantic (stand-in)": q=>order(dense(ix, expand(q).expanded)),
+    "Hybrid (RRF)": q=>retrieveAll({...state, rerank:false}, ix, chunks, q).hIds,
+    "Hybrid + rerank": q=>retrieveAll({...state, rerank:true}, ix, chunks, q).final
+  };
+  const res = {}, detail = EVALSET.map(e=>({e, ranks:{}}));
+  for(const [name,fn] of Object.entries(methods)){
+    let hits=0, rr=0, pur=0, ctx=0;
+    EVALSET.forEach((e,qi)=>{
+      const ids = fn(e.q).slice(0,state.k);
+      const r = ids.findIndex(id=>e.gold.some(g=>chunks[id].secs[g]));
+      if(r>=0){ hits++; rr+=1/(r+1); }
+      detail[qi].ranks[name]=r;
+      if(ids.length){ const c=chunks[ids[0]]; pur += e.gold.reduce((s,g)=>s+(c.secs[g]||0),0)/c.n; }
+      ctx += ids.reduce((s,id)=>s+chunks[id].n,0);
+    });
+    const n=EVALSET.length;
+    res[name]={recall:hits/n, mrr:rr/n, purity:pur/n, ctx:Math.round(ctx/n)};
+  }
+  const bar=(v,cls)=>`<div class="evbar"><div class="bar"><i class="${cls||''}" style="width:${(v*100).toFixed(0)}%"></i></div><span class="mono">${v.toFixed(2)}</span></div>`;
+  const best = Math.max(...Object.values(res).map(r=>r.mrr));
+  $("ev-summary").innerHTML = `<thead><tr><th>Method</th><th>Recall@${state.k}</th><th>MRR</th><th>Top-1 purity</th><th class="num">Context words</th></tr></thead><tbody>${
+    Object.entries(res).map(([n,r])=>`<tr><td>${n}${r.mrr===best?' <span class="pill ok">best MRR</span>':''}</td><td>${bar(r.recall,'r')}</td><td>${bar(r.mrr)}</td><td>${bar(r.purity)}</td><td class="num">${r.ctx}</td></tr>`).join("")}</tbody>`;
+  const names = Object.keys(methods);
+  $("ev-detail").innerHTML = `<thead><tr><th>Test question</th><th>Gold</th>${names.map(n=>`<th>${n}</th>`).join("")}</tr></thead><tbody>${
+    detail.map(d=>`<tr class="clickable" tabindex="0" data-q="${esc(d.e.q)}"><td>${esc(d.e.q)}</td><td>${d.e.gold.map(secChip).join(" ")}</td>${names.map(n=>{const r=d.ranks[n]; return `<td class="hitcell ${r<0?'miss':r===0?'hit1':''}">${r<0?'miss':'rank '+(r+1)}</td>`;}).join("")}</tr>`).join("")}</tbody>`;
+  document.querySelectorAll("#ev-detail tr.clickable").forEach(tr=>{
+    const go=()=>{ $("q").value=tr.dataset.q; state.query=tr.dataset.q; renderQuery(); $("retrieve").scrollIntoView(); };
+    tr.addEventListener("click",go); tr.addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+  });
+}
+
+/* ---------- Wiring ---------- */
+function renderQuery(){ renderRetrieve(); routeAndAnswer(); }
+function renderAll(){
+  $("c-size-o").textContent=state.size; $("c-ov-o").textContent=state.ov;
+  $("alpha-o").textContent=state.alpha.toFixed(1); $("topk-o").textContent=state.k;
+  rebuild(); renderChunks(); renderQuery(); evaluate();
+}
+$("examples").innerHTML = EXAMPLES.map(x=>`<button type="button" class="chip">${esc(x)}</button>`).join("");
+$("examples").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{ $("q").value=b.textContent; state.query=b.textContent; renderQuery(); }));
+$("q").addEventListener("input",e=>{ state.query=e.target.value; renderQuery(); });
+["p-head","p-hyph","p-lines","p-table"].forEach(id=>$(id).addEventListener("change",renderParse));
+function setStrat(s){ state.strategy=s; $("s-fixed").setAttribute("aria-pressed",s==="fixed"); $("s-section").setAttribute("aria-pressed",s==="section"); renderAll(); }
+$("s-fixed").addEventListener("click",()=>setStrat("fixed"));
+$("s-section").addEventListener("click",()=>setStrat("section"));
+$("c-size").addEventListener("input",e=>{ state.size=+e.target.value; if(state.ov>=state.size-5){state.ov=Math.max(0,state.size-10); $("c-ov").value=state.ov;} renderAll(); });
+$("c-ov").addEventListener("input",e=>{ state.ov=Math.min(+e.target.value, state.size-10); renderAll(); });
+$("alpha").addEventListener("input",e=>{ state.alpha=+e.target.value; renderAll(); });
+$("topk").addEventListener("input",e=>{ state.k=+e.target.value; renderAll(); });
+$("use-rerank").addEventListener("change",e=>{ state.rerank=e.target.checked; renderAll(); });
+renderParse(); renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{
+  "source_id": "sample",
+  "revision": "illustrative",
+  "note": "Written for this demo. Paraphrases general diving concepts; not quoted from any manual; not diving guidance.",
+  "sections": [
+    {
+      "section": "2-1",
+      "title": "Absolute pressure",
+      "text": "Divers work under two pressures at once: atmospheric and hydrostatic. At sea level the atmosphere exerts 1 atmosphere absolute (ata). Every 33 feet of seawater (fsw), about 10 meters, adds another atmosphere. Absolute pressure is the sum of both, so a diver at 33 fsw is under 2 ata and at 99 fsw under 4 ata. Depth gauges show gauge pressure, which leaves out the atmosphere, so add 1 ata to convert."
+    },
+    {
+      "section": "2-2",
+      "title": "Boyle's law and gas volume",
+      "text": "At constant temperature the volume of a gas is inversely proportional to its absolute pressure. Air in the lungs, mask, ears and buoyancy compensator shrinks on descent and expands on ascent. The largest relative change happens near the surface. Rising from 33 fsw to the surface doubles a gas volume, while rising from 99 fsw to 66 fsw increases it by only one third."
+    },
+    {
+      "section": "2-3",
+      "title": "Dalton's law and partial pressure",
+      "text": "The total pressure of a gas mixture equals the sum of the partial pressures of its parts. Each gas's partial pressure is its fraction in the mix multiplied by the absolute pressure. Air is about 21 percent oxygen, so at 4 ata the partial pressure of oxygen (PO2) is about 0.84 ata. Narcosis and oxygen toxicity depend on partial pressure, not on percentage."
+    },
+    {
+      "section": "3-1",
+      "title": "Nitrogen narcosis",
+      "text": "Breathing nitrogen at raised partial pressure produces narcosis, a state that resembles alcohol intoxication. Divers may notice slowed thinking, overconfidence and poor judgment. The effect grows with depth, varies between people and from day to day, and clears quickly on ascent. Narcosis is one reason air diving has a depth limit."
+    },
+    {
+      "section": "3-2",
+      "title": "Oxygen toxicity",
+      "text": "Oxygen at high partial pressure is toxic. Central nervous system oxygen toxicity can cause visual changes, ringing in the ears, nausea, twitching, irritability and dizziness, and it can lead to a convulsion with no warning. Underwater a convulsion can cause drowning. Risk rises with PO2, exposure time, exertion and carbon dioxide buildup. Planned exposures must stay within the oxygen limits set by the governing procedures."
+    },
+    {
+      "section": "3-3",
+      "title": "Arterial gas embolism",
+      "text": "Arterial gas embolism happens when expanding gas ruptures lung tissue and bubbles enter the arterial circulation, usually from holding the breath or an airway blockage during ascent. Symptoms typically appear within minutes of surfacing and can include unconsciousness, confusion, weakness or paralysis. It is a medical emergency treated by prompt recompression."
+    },
+    {
+      "section": "3-4",
+      "title": "Decompression sickness",
+      "text": "Decompression sickness, often called the bends, is caused by bubbles of inert gas that form in tissues and blood when pressure falls too quickly for the dissolved gas to leave in solution. Symptoms range from joint pain and skin rash to numbness, weakness, breathing difficulty and paralysis. Signs may appear minutes to hours after a dive. Treatment is recompression in a chamber following an approved treatment table."
+    },
+    {
+      "section": "3-5",
+      "title": "Barotrauma of the ears and sinuses",
+      "text": "Barotrauma is injury caused by a pressure difference between an air space in the body and the surrounding water. The middle ear and sinuses are most often affected. An ear squeeze on descent causes pain that grows if the diver keeps descending without equalizing. Equalize early and often, stop or rise slightly if equalizing fails, and do not dive with congestion from a cold."
+    },
+    {
+      "section": "4-1",
+      "title": "Controlled ascent",
+      "text": "Ascend at a controlled rate while breathing normally. Never hold the breath during ascent, because expanding gas can overinflate and rupture the lungs. Vent air from the buoyancy compensator and dry suit as it expands to avoid an uncontrolled rise. Complete any required decompression stops at the depths and times the governing table specifies."
+    },
+    {
+      "section": "4-2",
+      "title": "Flying and altitude after diving",
+      "text": "Lower cabin pressure in an aircraft, or a drive over a mountain pass, reduces ambient pressure further and can bring on decompression sickness after diving. Divers must wait the surface interval the governing procedures specify before flying or going to altitude. The required interval depends on the dives performed and the altitude reached."
+    },
+    {
+      "section": "5-1",
+      "title": "Open-circuit regulators",
+      "text": "An open-circuit scuba regulator reduces high-pressure cylinder gas in two stages. The first stage, mounted on the cylinder valve, drops the gas to an intermediate pressure above ambient. The second stage, held in the mouth, delivers gas at ambient pressure on demand as the diver inhales. Exhaled gas goes into the water."
+    },
+    {
+      "section": "5-2",
+      "title": "Pre-dive checks",
+      "text": "Before entering the water, divers confirm that cylinders are full and valves open, regulators breathe freely, gauges read correctly, buoyancy devices inflate and deflate, and weights can be released. Buddies review each other's equipment. The dive briefing covers the plan, depth and time limits, signals and emergency procedures."
+    },
+    {
+      "section": "6-1",
+      "title": "Contaminated water",
+      "text": "Water polluted by sewage, chemicals or biological agents can harm divers through skin contact, swallowing or breathing. Diving in contaminated water calls for a hazard assessment and protective equipment chosen for the contaminant, often a surface-supplied helmet sealed to a dry suit so no water reaches the diver, followed by decontamination after the dive."
+    },
+    {
+      "section": "7-1",
+      "title": "Recompression treatment",
+      "text": "Recompression chambers treat decompression sickness and arterial gas embolism by raising pressure to shrink bubbles and by giving oxygen to speed inert gas removal. Treatment tables define depths, times and breathing gases. Table selection and any change during treatment are directed by a qualified diving medical officer based on the diver's symptoms and response."
+    }
+  ]
+}

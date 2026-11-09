@@ -1,0 +1,43 @@
+# Approved sources. `diverag ingest` refuses to run if any license is not in
+# ALLOWED_LICENSES (src/diverag/sources.py). Download each file to `path` first;
+# data/raw/ is gitignored, so the manuals themselves are never committed.
+
+[[source]]
+id = "usn-dm-r7a"
+title = "US Navy Diving Manual, Revision 7 Change A"
+publisher = "NAVSEA 00C"
+license = "public-release"
+revision = "Rev 7 Change A"
+effective = "2018-04-30"
+url = "https://www.navsea.navy.mil/Home/SUPSALV/00C3-Diving/Diving-Publications/"
+path = "data/raw/DivMan_Rev.7ChangeA_eBook.epub"
+
+[[source]]
+id = "usn-contaminated-r2"
+title = "Guidance for Diving in Contaminated Waters, Rev 2"
+publisher = "NAVSEA 00C"
+license = "public-release"
+revision = "Rev 2"
+effective = "2019-10-04"
+url = "https://www.navsea.navy.mil/Home/SUPSALV/00C3-Diving/Diving-Publications/"
+path = "data/raw/Contaminated_Water_Dive_Man_Rev2.pdf"
+
+[[source]]
+id = "noaa-ndssm"
+title = "NOAA Diving Standards and Safety Manual"
+publisher = "NOAA Office of Marine and Aviation Operations"
+license = "us-gov-work"
+revision = "2025"
+effective = "2025-03-06"
+url = "https://omb.report/icr/202610-0648-005/doc/174085100"
+path = "data/raw/NDSSM_2025.pdf"
+
+[[source]]
+id = "nps-fm4"
+title = "NPS Diving Safety and Operations Manual (FM-4)"
+publisher = "National Park Service"
+license = "us-gov-work"
+revision = "2019"
+effective = "2019-10-01"
+url = "https://home.nps.gov/subjects/policy/upload/FM-4_10-01-2019.pdf"
+path = "data/raw/FM-4_10-01-2019.pdf"
